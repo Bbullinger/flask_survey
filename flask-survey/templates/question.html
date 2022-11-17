@@ -1,0 +1,17 @@
+{% extends 'base.html' %} {% block title %} {{survey.title}} {% endblock %}
+{% block content %}
+<h1>{{survey.questions[number].question}}</h1>
+<!-- display message to user if url was changed to jump questions -->
+{% for msg in get_flashed_messages() %}
+    <h2> {{msg}}</h2>
+{% endfor %}
+
+<!-- create a form, with a radio button for each possible answer, name is based off question# -->
+<form action="/question/{{number}}/answer", method="POST">
+    {% for answer in survey.questions[number].choices %}
+    <input type="radio" class="answers" name="{{number}}" id="{{number}}-{{answer}}" value="{{answer}}">
+        <label for="{{answer}}">{{answer}}</label><br>
+    {% endfor %}
+    <button type="submit">Submit Answer</button>
+</form>
+{% endblock %}
