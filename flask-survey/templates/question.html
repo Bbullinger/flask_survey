@@ -7,7 +7,7 @@
 {% endfor %}
 
 <!-- create a form, with a radio button for each possible answer, name is based off question# -->
-<form action="/question/{{number}}/answer", method="POST">
+<form action="/{{quiz}}/question/{{number}}/answer", method="POST">
     {% for answer in survey.questions[number].choices %}
     <input type="radio" class="answers" name="{{number}}" id="{{number}}-{{answer}}" value="{{answer}}">
         <label for="{{answer}}">{{answer}}</label><br>

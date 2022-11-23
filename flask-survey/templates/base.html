@@ -9,8 +9,17 @@
 <body>
     {% block content %}
     <h1>Please click the link below to go to our survey</h1> 
-    <a href="/question/0">Survey</a>
+    <ul>
+        <li>
+        <a href="/satisfaction_survey/question/0">{{surveys.satisfaction_survey.title}}</a>
+        </li>
+        <li>
+            <a href="/personality_quiz/question/0">{{surveys.personality_quiz.title}}</a>
+        </li>
+ 
+    </ul>
     {% endblock %}
+    
     
 </body>
 </html>

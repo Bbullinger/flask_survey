@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, flash
+from flask import Flask, render_template, request, redirect, flash, session
 from flask_debugtoolbar import DebugToolbarExtension
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = "my_password"
+app.config["SECRET_KEY"] = "my_password"
 debug = DebugToolbarExtension(app)
-app.config['SECRET_KEY'] = "my_password"
+app.config["SECRET_KEY"] = "my_password"
 import surveys
 
 # from flask_debugtoolbar import DebugToolbarExtension
@@ -12,43 +13,75 @@ import surveys
 # app.config['SECRET_KEY'] = "my_password"
 app.debug = True
 
-responses = []
 
-#hard coded survey, for now
-satisfaction_survey = surveys.satisfaction_survey
 
-@app.route('/')
+@app.route("/", methods=["GET", "POST"])
 def home_page():
-    return render_template("base.html")
+    session['responses'] = []
+    return render_template("base.html", surveys=surveys)
 
-@app.route('/question/<int:number>')
-def user_question(number):
-    num_questions = len(satisfaction_survey.questions)
-    survey = satisfaction_survey
 
-    #logic to prevent user from answering questions out of order
-    if (number != len(responses)):
+@app.route("/<quiz>/question/<int:number>",methods=["GET","POST"])
+def user_question(quiz, number):
+    if quiz == "personality_quiz":
+        survey = surveys.personality_quiz
+    if quiz == "satisfaction_survey":
+        survey = surveys.satisfaction_survey
+
+
+    num_questions = len(survey.questions)
+
+    #logic to prevent user from answering questions post-survey completion
+    if len(session["responses"]) == len(survey.questions):
+     return redirect("/end_survey")
+
+    # logic to prevent user from answering questions out of order
+    if number != len(session["responses"]):
         flash("Please answer questions in order")
-        return redirect(f'/question/{len(responses)}')
+        return redirect(f"/{quiz}/question/{len(session['responses'])-1}")
+
+    #Posts answer to session if this is the last question
     
-    #changes page to thank you page once all questions have been answered
-    if (len(responses) == num_questions):
-        return redirect("/end_survey")
-    return render_template("question.html", survey=survey,num_questions=num_questions,number=number,responses=responses)
+
+    return render_template(
+        "question.html",
+        survey=survey,
+        num_questions=num_questions,
+        number=number,
+        responses=session["responses"],
+        quiz=quiz
+    )
 
 
+@app.route("/<quiz>/question/<int:number>/answer", methods=["POST"])
+def answer(quiz, number):
+    if quiz == "personality_quiz":
+        survey = surveys.personality_quiz
+    if quiz == "satisfaction_survey":
+        survey = surveys.satisfaction_survey
 
-@app.route('/question/<int:number>/answer',methods=['POST'])
-def answer(number):
-
-#retrieve user answer from survey form, add the answer to the responses list
-#number incremented to change page to next question on redirect
+    # retrieve user answer from survey form, add the answer to the session["responses"] list
+    # number incremented to change page to next question on redirect
     answer = request.form.get(str(number))
-    number += 1
+    
+    responses = session.get('responses')
     responses.append(answer)
-    print(responses)
-    return redirect(f'/question/{number}')
+    session['responses'] = responses
+    number += 1
 
-@app.route('/end_survey')
+    # changes page to thank you page once all questions have been answered
+    if len(session["responses"]) == len(survey.questions):
+        return redirect("/end_survey")
+    
+    
+    
+    
+    return redirect(f"/{quiz}/question/{number}")
+
+
+@app.route("/end_survey")
 def thanks():
-    return render_template("thanks.html",responses=responses,survey=satisfaction_survey)
+    print(session["responses"])
+    return render_template(
+        "thanks.html", responses=session["responses"]
+    )
